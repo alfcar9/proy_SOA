@@ -36,3 +36,10 @@ g4
 
 # Numero de datos
 num_df <- cbind(sapply(unique(datos$tasa), function(i) datos %>% filter(tasa == i, polling == "Si") %>% nrow()), sapply(unique(datos$tasa), function(i) datos %>% filter(tasa == i, polling == "No") %>% nrow()))
+num_df <- as.data.frame(num_df)
+num_df <- num_df %>% mutate(id = 1:11)
+colnames(num_df) <- c("Si", "No", "id")
+num_df <- gather(num_df, variable, valor, -id)
+g5 <- ggplot(num_df, aes(x = id, y = valor, col = variable)) + geom_point()
+g5 
+
