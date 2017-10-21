@@ -1,5 +1,7 @@
 library(tidyverse)
 library(knitr)
+
+# Cambiar directorio.
 datos <- read_delim("~/Desktop/1er_Semestre/Sistemas Opera/Proyecto/proy.txt", "\t", escape_double = FALSE, trim_ws = TRUE)
 datos %>% filter(Polling == "No") %>% nrow()
 colnames(datos) <- c("corrida", "servidor", "tiempo_proces", "cliente", "time_stamp", "tasa", "polling")
