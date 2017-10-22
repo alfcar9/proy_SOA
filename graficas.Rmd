@@ -1,0 +1,99 @@
+---
+title: "graficas"
+author: "Alfredo Carrillo"
+date: "October 22, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(knitr)
+```
+
+Descarga y modificacion de datos.
+```{r}
+datos <- read_delim("~/Desktop/1er_Semestre/Sistemas Opera/Proy_SOA/datos.txt", "\t", escape_double = FALSE, trim_ws = TRUE)
+datos %>% filter(Polling == "No") %>% nrow()
+colnames(datos) <- c("corrida", "servidor", "tiempo_proces", "cliente", "time_stamp", "tasa", "polling")
+datos <- datos %>% select(-servidor)
+datos <- datos %>% mutate(dif_tiempos = c(NA, datos$time_stamp[2:66975] - datos$time_stamp[1:66974]))
+datos <- datos %>% mutate(dif_tiempos = ifelse(dif_tiempos >0, dif_tiempos, NA))
+datos <- datos %>% mutate(recibido = ifelse(tiempo_proces < 10, TRUE, FALSE))
+```
+```{r}
+head(datos)
+```
+
+Gráfica de rendimiento.
+```{r}
+summary_df <- datos %>% group_by(polling, tasa) %>% summarise(tasa_recibido=mean(recibido), tiempo=mean(tiempo_proces))
+
+g1 <- ggplot(data = (summary_df), aes(x = tasa, y = tasa*tasa_recibido, col = polling)) + geom_line(size = 0.3) +
+  geom_point() + labs(title = "Latencia", x = "Tasa", y = "Nanosegundos") + theme_bw()
+g1
+```
+
+Gráfica de justicia sin considerar poleo
+```{r}
+y <- sort(sapply(1:101, function(i) datos %>% filter(cliente==i) %>% nrow()))
+y <- 100*(y/sum(y))
+clientes_df <- data_frame(x = 1:101, y = y, Atención = factor(ifelse(abs(y-100/101) < .15, "Justo", "Injusto")))
+g2 <- ggplot(clientes_df, aes(x = x, y = y, fill = Atención)) +
+  geom_bar(stat="identity", width = 1, alpha = 0.95, col = 'gray') +
+  scale_y_continuous(breaks = round(seq(0, (max(y) + 0.02), by = 0.1), 2)) +
+  scale_color_manual(labels = c("T999", "T888"), values = c("blue", "red")) +
+  labs(title = "Atención por Clientes") + xlab("Clientes") + ylab("Proporción de atencion por Clientes %") + theme_bw()
+g2
+```
+
+Considerando poleo. Grafica con poleo
+```{r}
+y <- sort(sapply(1:101, function(i) datos %>% filter(polling == "Si", cliente==i) %>% nrow()))
+y <- 100*(y/sum(y))
+clientes_df <- data_frame(x = 1:101, y = y, Atención = factor(ifelse(abs(y-100/101) < .15, "Justo", "Injusto")))
+g3 <- ggplot(clientes_df, aes(x = x, y = y, fill = Atención)) +
+  geom_bar(stat="identity", width = 1, alpha = 0.95, col = 'gray') +
+  scale_y_continuous(breaks = round(seq(0, (max(y) + 0.02), by = 0.1), 2)) +
+  scale_color_manual(labels = c("T999", "T888"), values = c("blue", "red")) +
+  labs(title = "Atención por Clientes") + xlab("Clientes") + ylab("Proporción de atencion por Clientes %") + theme_bw()
+g3
+```
+
+Grafica sin poleo
+```{r}
+y <- sort(sapply(1:101, function(i) datos %>% filter(polling == "No", cliente==i) %>% nrow()))
+y <- 100*(y/sum(y))
+clientes_df <- data_frame(x = 1:101, y = y, Atención = factor(ifelse(abs(y-100/101) < .15, "Justo", "Injusto")))
+g4 <- ggplot(clientes_df, aes(x = x, y = y, fill = Atención)) +
+  geom_bar(stat="identity", width = 1, alpha = 0.95, col = 'gray') +
+  scale_y_continuous(breaks = round(seq(0, (max(y) + 0.02), by = 0.1), 2)) +
+  scale_color_manual(labels = c("T999", "T888"), values = c("blue", "red")) +
+  labs(title = "Atención por Clientes") + xlab("Clientes") + ylab("Proporción de atencion por Clientes %") + theme_bw()
+g4
+```
+
+Usando time stamp se obtuvo diferencia de tiempos. Se uso como tiempo, cual es la diferencia con tiempo de procesamiento.
+```{r}
+g5 <- ggplot() + geom_histogram(aes(x = datos$dif_tiempos, y = ..density.., is.na = FALSE), col = 'black', alpha = 0.2, fill='blue') + 
+    labs(title = "Latencia", x = "Nanosegundos", y = " ") + xlim(0,60) + theme_bw()
+g5
+```
+
+
+```{r}
+g6 <- ggplot(data = summary_df %>% filter(!is.na(tiempo)), aes(x = tasa, y = tiempo, col = polling)) + geom_line() + geom_point() +
+  labs(title = "Latencia", x = "Tasa", y = "Nanosegundos") + theme_bw()
+g6
+```
+
+```{r}
+# Numero de datos
+num_df <- cbind(sapply(unique(datos$tasa), function(i) datos %>% filter(tasa == i, polling == "Si") %>% nrow()), sapply(unique(datos$tasa), function(i) datos %>% filter(tasa == i, polling == "No") %>% nrow()))
+num_df <- as.data.frame(num_df)
+num_df <- num_df %>% mutate(id = 1:11)
+colnames(num_df) <- c("Si", "No", "id")
+num_df <- gather(num_df, variable, valor, -id)
+g7 <- ggplot(num_df, aes(x = id, y = valor, col = variable)) + geom_point()
+g7 
+```
