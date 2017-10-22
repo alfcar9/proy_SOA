@@ -87,7 +87,7 @@ g6 <- ggplot(data = summary_df %>% filter(!is.na(tiempo)), aes(x = tasa, y = tie
 g6
 ```
 
-Numero de datos por tasa
+Numero de datos por tasa.
 ```{r}
 num_df <- cbind(sapply(unique(datos$tasa), function(i) datos %>% filter(tasa == i, polling == "Si") %>% nrow()), sapply(unique(datos$tasa), function(i) datos %>% filter(tasa == i, polling == "No") %>% nrow()))
 num_df <- as.data.frame(num_df)
