@@ -14,24 +14,23 @@ library(knitr)
 Descarga y modificacion de datos.
 ```{r}
 datos <- read_delim("~/Desktop/1er_Semestre/Sistemas Opera/Proy_SOA/datos.txt", "\t", escape_double = FALSE, trim_ws = TRUE)
-datos %>% filter(Polling == "No") %>% nrow()
 colnames(datos) <- c("corrida", "servidor", "tiempo_proces", "cliente", "time_stamp", "tasa", "polling")
 datos <- datos %>% select(-servidor)
+datos$time_stamp <- datos$time_stamp - min(datos$time_stamp)
 datos <- datos %>% mutate(dif_tiempos = c(NA, datos$time_stamp[2:66975] - datos$time_stamp[1:66974]))
-datos <- datos %>% mutate(dif_tiempos = ifelse(dif_tiempos >0, dif_tiempos, NA))
-datos <- datos %>% mutate(recibido = ifelse(tiempo_proces < 10, TRUE, FALSE))
+datos <- datos %>% mutate(dif_tiempos = ifelse(dif_tiempos >1000 | dif_tiempos < 0, NA, dif_tiempos))
 ```
 
 ```{r}
 throughput_df <- datos %>% group_by(polling, tasa) %>% summarise(tasa_recibido=max(corrida))
-throughput_df <- throughput_df %>% mutate(tasainv = 101/tasa*1000 )
+throughput_df <- throughput_df %>% mutate(tasainp = 10100000/tasa )
 throughput_df[13,3] <- 5110
 ```
 
 Gráfica de rendimiento.
 ```{r met1, cache = TRUE}
-g1 <- ggplot(data = throughput_df, aes(x = tasainv, y = tasa_recibido, col = polling)) + geom_line(size = 0.3) +
-  geom_point() + labs(title = "Throughput", x = "Tasa", y = "Output") + theme_bw()
+g1 <- ggplot(data = throughput_df, aes(x = tasainp, y = tasa_recibido, col = polling)) + geom_line(size = 0.3) +
+  geom_point() + labs(title = "Throughput", x = "Input Packet Rate (pkts/sec)", y = "Output Packet Rate (pkts/sec)") + theme_bw()  + ylim(1000, 18000)
 g1
 ```
 
