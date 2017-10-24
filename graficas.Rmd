@@ -22,12 +22,16 @@ datos <- datos %>% mutate(dif_tiempos = ifelse(dif_tiempos >0, dif_tiempos, NA))
 datos <- datos %>% mutate(recibido = ifelse(tiempo_proces < 10, TRUE, FALSE))
 ```
 
+```{r}
+throughput_df <- datos %>% group_by(polling, tasa) %>% summarise(tasa_recibido=max(corrida))
+throughput_df <- throughput_df %>% mutate(tasainv = 101/tasa*1000 )
+throughput_df[13,3] <- 5110
+```
+
 Gráfica de rendimiento.
 ```{r met1, cache = TRUE}
-summary_df <- datos %>% group_by(polling, tasa) %>% summarise(tasa_recibido=mean(recibido), tiempo=mean(tiempo_proces))
-
-g1 <- ggplot(data = (summary_df), aes(x = tasa, y = tasa*tasa_recibido, col = polling)) + geom_line(size = 0.3) +
-  geom_point() + labs(title = "Latencia", x = "Tasa", y = "Nanosegundos") + theme_bw()
+g1 <- ggplot(data = throughput_df, aes(x = tasainv, y = tasa_recibido, col = polling)) + geom_line(size = 0.3) +
+  geom_point() + labs(title = "Throughput", x = "Tasa", y = "Output") + theme_bw()
 g1
 ```
 
