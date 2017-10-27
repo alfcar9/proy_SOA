@@ -1,17 +1,34 @@
-datos <- read_delim("~/Desktop/1er_Semestre/Sistemas Opera/Proy_SOA/datos.txt", "\t", escape_double = FALSE, trim_ws = TRUE)
+setwd("~/Desktop/1er_Semestre/Sistemas Opera/Proy_SOA")
+
+library(tidyverse)
+
+datos <- read_csv("~/Desktop/1er_Semestre/Sistemas Opera/Proy_SOA/datos2.csv")
+#datos <- read_delim("~/Desktop/1er_Semestre/Sistemas Opera/Proy_SOA/datos.csv", "\t", escape_double = FALSE, trim_ws = TRUE)
+#datos <- read_delim("~/Desktop/1er_Semestre/Sistemas Opera/Proy_SOA/datos2.csv", "\t", escape_double = FALSE, trim_ws = TRUE)
 colnames(datos) <- c("corrida", "servidor", "tiempo_proces", "cliente", "time_stamp", "tasa", "polling")
 datos <- datos %>% select(-servidor)
-datos$time_stamp <- datos$time_stamp - min(datos$time_stamp)
-datos <- datos %>% mutate(dif_tiempos = c(NA, datos$time_stamp[2:66975] - datos$time_stamp[1:66974]))
+ndatos <- nrow(datos)
+datos$time_stamp <- datos$time_stamp - min(datos$time_stamp, na.rm = TRUE)
+datos <- datos %>% mutate(dif_tiempos = c(NA, datos$time_stamp[2:ndatos] - datos$time_stamp[1:(ndatos-1)]))
 datos <- datos %>% mutate(dif_tiempos = ifelse(dif_tiempos >1000 | dif_tiempos < 0, NA, dif_tiempos))
 
 throughput_df <- datos %>% group_by(polling, tasa) %>% summarise(tasa_recibido=max(corrida))
-throughput_df <- throughput_df %>% mutate(tasainp = 10100000/tasa )
+throughput_df[nrow(throughput_df)+1,] <- c("Si",100000, 200)
+throughput_df[nrow(throughput_df)+1,] <- c("No",100000, 0)
+throughput_df$tasa <- as.double(throughput_df$tasa)
+throughput_df$tasa_recibido <- as.double(throughput_df$tasa_recibido)
+throughput_df <- throughput_df %>% mutate(tasainp = 10100/tasa )
 throughput_df[13,3] <- 5110
 
-g1 <- ggplot(data = throughput_df, aes(x = tasainp, y = tasa_recibido, col = polling)) + geom_line(size = 0.3) +
-  geom_point() + labs(title = "Throughput", x = "Input Packet Rate (pkts/sec)", y = "Output Packet Rate (pkts/sec)") + theme_bw()  + ylim(1000, 18000)
+throughput_df <-  throughput_df %>% mutate(tasa_out = tasa_recibido/100)
+g1 <- ggplot(data = throughput_df, aes(x = tasainp, y = tasa_out, col = polling)) + geom_line(size = 0.3) +
+  geom_point() + labs(title = "Throughput", x = "Tasa de paquetes recibidos (pkts/seg)", y = "Tasa de paquetes procesados (pkts/seg)") + theme_bw() +
+  ylim(0, 180) + geom_vline(xintercept = 0) + geom_hline(yintercept = 0) + geom_abline(slope = 1)
 g1
+
+g1.5 <- ggplot(data = throughput_df, aes(x = tasainp, y = (tasainp - tasa_out), col = polling)) + geom_line(size = 0.3) +
+  geom_point() + labs(title = "Throughput", x = "Tasa de paquetes recibidos (pkts/seg)", y = "Tasa de paquetes no procesados (pkts/seg)") + theme_bw()
+g1.5
 
 prop1 <- sort(sapply(1:101, function(i) datos %>% filter(cliente==i) %>% nrow()))
 prop1 <- 100*(prop1/sum(prop1))
@@ -37,6 +54,8 @@ g2
 throughput_df <- datos %>% group_by(polling, tasa) %>% summarise(latencia=mean(dif_tiempos, na.rm = TRUE))
 throughput_df <- throughput_df %>% mutate(tasainp = 10100000/tasa)
 
-g3 <- ggplot(data = throughput_df, aes(x = tasainp, y = latencia, col = polling)) + geom_line(size = 0.3) +
-  geom_point() + labs(title = "Latencia", x = "Input Packet Rate (pkts/sec)", y = "Latencia promedio por paquete recibido") + theme_bw()  
+g3 <- ggplot(data = throughput_df, aes(x = tasainp/100, y = latencia/1000, col = polling)) + geom_line(size = 0.3) +
+  geom_point() + labs(title = "Latencia", x = "Tasa de paquetes recibidos (pkts/seg)", y = "Latencia promedio en seg de procesamiento") +
+  theme_bw()  
 g3
+
