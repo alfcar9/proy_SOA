@@ -23,10 +23,10 @@ throughput_df[13,3] <- 5110
 
 throughput_df <- throughput_df %>% mutate(tasa_df = (tasainp - tasa_out))
 throughput_df <- throughput_df %>% gather(metodo, valor, -tasainp, -tasa, -polling)
-throughput_df <- throughput_df %>% mutate(metodo = ifelse(metodo = "tasa_out", "Tasa de sí recibidos", "Tasa no recibidos"))
+throughput_df <- throughput_df %>% mutate(metodo = ifelse(metodo == "tasa_out", "Tasa de sí recibidos", "Tasa no recibidos"))
 
 g1 <- ggplot(data = throughput_df, aes(x = tasainp, y = valor, col = polling, shape = polling)) + geom_line(size = 0.3) +
-  geom_point(size = 2) + labs(title = "Throughput", x = "Tasa de paquetes recibidos (pkts/seg)", y = "Tasa de paquetes procesados (pkts/seg)") + theme_bw() +
+  geom_point(size = 2) + labs(title = "Rendimiento", x = "Tasa de paquetes recibidos (pkts/seg)", y = "Tasa de paquetes procesados (pkts/seg)") + theme_bw() +
   ylim(0, 180) + geom_vline(xintercept = 0) + geom_hline(yintercept = 0) + facet_wrap(~metodo) +
   geom_abline(slope = 1) + scale_color_manual(values=cbPalette) 
 g1
